@@ -27,6 +27,15 @@ int centreX;
 int centreY;
 int start = 0;
 
+//Delayed output 4 axis
+int delayF = 0;
+int delayB = 0;
+int delayR = 0;
+int delayL = 0;
+
+unsigned long newTime = 0;
+unsigned long oldTime = 0;
+float deltaTime = 0.0;
 //Final output values
 int outputL = 0;
 int outputR = 0;
@@ -100,4 +109,56 @@ void loop(){
     InL = 0;
   }
 
+  // Moves the output towards the desired input at responseSpeed
+  newTime = millis();
+  if (oldTime != 0){
+    newTime - oldTime = deltaTime;
+    deltaTime /= 1000; // Change into seconds
+  }
+  oldTime = newTime;
+
+
+  // Forward desired pos calculation
+  if (delayF >= InF){
+    delayF = InF;
+  } else {
+    if (InF - delayF < deltaTime * responseSpeed){
+      delayF = InF;
+    } else {
+      delayF += deltaTime * responseSpeed;
+    } 
+  }
+
+  // Backward desired pos calculation
+  if (delayB >= InB){
+    delayB = InB;
+  } else {
+    if (InB - delayB < deltaTime * responseSpeed){
+      delayB = InB;
+    } else {
+      delayB += deltaTime * responseSpeed;
+    } 
+  }
+
+  // Right desired pos calculation
+  if (InR == 0){
+    delayR = 0;
+  } else {
+    if (InR - delayR < deltaTime * responseSpeed){
+      delayR = InR;
+    } else {
+      delayR += deltaTime * responseSpeed;
+    } 
+  }
+
+  // Left desired pos calculation
+  if (InL == 0){
+    delayL = 0;
+  } else {
+    if (InL - delayL < deltaTime * responseSpeed){
+      delayL = InL;
+    } else {
+      delayL += deltaTime * responseSpeed;
+    } 
+  }
 }
