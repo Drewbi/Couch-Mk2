@@ -12,6 +12,8 @@
 #define deadZone 50
 #define responseSpeed 10
 #define outPin 3
+#define swapSpeed 1
+#define spinSpeedReduction 2
 
 //Raw voltage inputs
 int JoyX = 0;
@@ -40,6 +42,11 @@ float deltaTime = 0.0;
 int outputL = 0;
 int outputR = 0;
 
+int speedL = 0;
+int speedR = 0;
+int speed = 0; // Speed of the fastest wheel
+
+int direction = 0; // Forwards = 1, neutral = 0, back = -1
 
 void setup(){
   Serial.begin(115200);
@@ -119,14 +126,14 @@ void loop(){
 
 
   // Forward desired pos calculation
-  if (delayF >= InF){
-    delayF = InF;
+  if (delayF >= InF){ // If the input is less than the current,
+    delayF = InF;     // the current is set to the input with no delay
   } else {
-    if (InF - delayF < deltaTime * responseSpeed){
-      delayF = InF;
+    if (InF - delayF < deltaTime * responseSpeed){ // If the amount to be added is more than
+      delayF = InF; // the difference between the input and the current, make them equal, stops over shooting
     } else {
-      delayF += deltaTime * responseSpeed;
-    } 
+      delayF += deltaTime * responseSpeed; // Delta time will adjust the response speed 
+    }  // so that exactly responseSpeed units will be added each second
   }
 
   // Backward desired pos calculation
@@ -161,4 +168,47 @@ void loop(){
       delayL += deltaTime * responseSpeed;
     } 
   }
+
+  if (speedL > speedR){
+    speed = speedL;
+  } else if (speedR > speedL){
+    speed = speedR;
+  } else {
+    speed = speedL;
+  }
+
+  if (InF > 0 && speed < swapSpeed){
+    direction = 1;
+  } else if (InB > 0 && speed < swapSpeed){
+    direction = -1;
+  } else if (InF = 0 && inB = 0 && speed < swapSpeed){
+    direction = 0;
+  }
+  // Going places
+  if (delayF > 0 && direction == 1){
+    outputL = delayF;
+    outputR = delayF;
+  } else if(delayB > 0 && direction == -1){
+    outputL = -1 * delayB; // TODO Figure out how to do reverse
+    outputR = -1 * delayB;
+  } else if(direction == 0 || delayF == 0 && delayB == 0){
+    outputL = 0;
+    outputR = 0;
+  }
+  // Turning
+  if(direction == 1 && delayR > 0){
+    outputR -= delayR; // TODO Test if this is ok
+  } else if(direction == 1 && delayL > 0){
+    outputL -= delayL;
+  } else if(direction == 0){
+    if(delayR > 0){
+      outputL = delayR/spinSpeedReduction;
+      outputR = -1 * delayR/spinSpeedReduction
+    } else if(delayL > 0){
+      outputR = delayL/spinSpeedReduction;
+      outputL = -1 * delayL/spinSpeedReduction
+    }
+  }
+  Serial.print("Left: " + outputL + "Right: " + outputR);
+  Serial.println();
 }
