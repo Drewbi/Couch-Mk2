@@ -9,11 +9,15 @@
 #define JoyYPin 0
 #define JoyXPin 1
 #define StartPin 2
+#define outPinL 3
+#define outPinR 4
+
 #define deadZone 50
-#define responseSpeed 10
-#define outPin 3
-#define swapSpeed 1
-#define spinSpeedReduction 2
+#define spinSpeedReduction 2 // Higher number = lower stationary rotation
+
+#define responseSpeed 10 // Speed of change of delayed input
+#define swapSpeed 1 // Speed at which couch can change direction.
+
 
 //Raw voltage inputs
 int JoyX = 0;
@@ -119,8 +123,7 @@ void loop(){
   // Moves the output towards the desired input at responseSpeed
   newTime = millis();
   if (oldTime != 0){
-    newTime - oldTime = deltaTime;
-    deltaTime /= 1000; // Change into seconds
+    newTime - oldTime / 1000 = deltaTime; // Change into seconds
   }
   oldTime = newTime;
 
@@ -211,4 +214,7 @@ void loop(){
   }
   Serial.print("Left: " + outputL + "Right: " + outputR);
   Serial.println();
+  analogWrite(outPinL, outputL);
+  analogWrite(outPinR, outputR);
+
 }
