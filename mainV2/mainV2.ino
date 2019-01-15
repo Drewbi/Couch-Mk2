@@ -11,8 +11,8 @@
 #define StartPin 2
 
 #define outPWMPinL 3
-#define outPWMPinR 4
-#define outDirPinL 5
+#define outDirPinL 4
+#define outPWMPinR 5
 #define outDirPinR 6
 
 #define deadZone 50
@@ -117,7 +117,7 @@ int getOutputDirection(int input){
 }
 
 int calculateTurningWheel(int X, int Y){
-    int wheelVal = Y - (0.5*X);
+    int wheelVal = Y - X;
     if(wheelVal < 0){
         wheelVal = 0;
     }
@@ -143,6 +143,19 @@ void loop(){
         digitalWrite(outDirPinL, 0);
         digitalWrite(outDirPinR, 0);       
     }
+    else {
+        if(turningDirection == 1){
+            digitalWrite(outDirPinL, 0);
+            digitalWrite(outDirPinR, 1);
+            analogWrite(outPWMPinL, abs(input[0])/2);
+            analogWrite(outPWMPinR, abs(input[0])/2);
+        } else if(turningDirection == -1){
+            digitalWrite(outDirPinL, 1);
+            digitalWrite(outDirPinR, 0);
+            analogWrite(outPWMPinL, abs(input[0])/2);
+            analogWrite(outPWMPinR, abs(input[0])/2);
+        }
+    }
 
     int slowWheel = calculateTurningWheel(abs(input[0]), abs(input[1]));
     int fastWheel = abs(input[1]);
@@ -167,13 +180,10 @@ void loop(){
         else if(directional == 0){
             //Serial.println("Stationary");
         }
+        Serial.println(fastWheel);
         analogWrite(outPWMPinL, fastWheel);
         analogWrite(outPWMPinR, fastWheel);
     }
-    Serial.print("F: ");
-    Serial.println(fastWheel);
-    Serial.print("S: ");
-    Serial.println(slowWheel);
     //Serial.println(slowWheel);
     // Serial.print("X: ");
     // Serial.print(input[0]);
