@@ -123,7 +123,7 @@ void loop(){
   // Moves the output towards the desired input at responseSpeed
   newTime = millis();
   if (oldTime != 0){
-    newTime - oldTime / 1000 = deltaTime; // Change into seconds
+    deltaTime = newTime - oldTime / 1000; // Change into seconds
   }
   oldTime = newTime;
 
@@ -184,7 +184,7 @@ void loop(){
     direction = 1;
   } else if (InB > 0 && speed < swapSpeed){
     direction = -1;
-  } else if (InF = 0 && inB = 0 && speed < swapSpeed){
+  } else if (InF = 0 && InB = 0 && speed < swapSpeed){
     direction = 0;
   }
   // Going places
@@ -206,13 +206,16 @@ void loop(){
   } else if(direction == 0){
     if(delayR > 0){
       outputL = delayR/spinSpeedReduction;
-      outputR = -1 * delayR/spinSpeedReduction
+      outputR = -1 * delayR/spinSpeedReduction;
     } else if(delayL > 0){
       outputR = delayL/spinSpeedReduction;
-      outputL = -1 * delayL/spinSpeedReduction
+      outputL = -1 * delayL/spinSpeedReduction;
     }
   }
-  Serial.print("Left: " + outputL + "Right: " + outputR);
+  Serial.print("Left: ");
+  Serial.print(outputL);
+  Serial.print("| Right: ");
+  Serial.print(outputR);
   Serial.println();
   analogWrite(outPinL, outputL);
   analogWrite(outPinR, outputR);

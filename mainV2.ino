@@ -70,7 +70,7 @@ void startup(StartPin){
     centreY = JoyY;
 }
 
-int getInput(inputPin, center, timeChange, JoyOutSmooth){
+int getInput(int inputPin, int center, double timeChange, int JoyOutSmooth){
     int JoyIn = analogRead(inputPin);
     int JoyOut;
     if (JoyIn > centre + deadZone){ //Joystick pushed forward
