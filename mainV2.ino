@@ -30,38 +30,25 @@ void setup(){
   pinMode(JoyYPin, INPUT);
   pinMode(JoyXPin, INPUT);
   pinMode(StartPin, INPUT);
-  input = [0, 0];
   started = 0;
   Serial.println("Initialized");    
 }
 
-void loop(){
-
-    if(!started){
-        startup(StartPin) // Loops inside itself
-        started = 1;
-        oldTime = millis();
-    }
-    double timeChange = checkTime();
-    input[0] = getInput(JoyXPin, centreX, timeChange, input[0]);
-    input[1] = getInput(JoyYPin, centreY, timeChange, input[1]);
-
-
-    
-}
-
-void startup(StartPin){
+void startup(){
+    int JoyX;
+    int JoyY;
     while(true){
         if (digitalRead(StartPin)){
-            int JoyX = analogRead(JoyXPin);
-            int JoyY = analogRead(JoyYPin);
+            JoyX = analogRead(JoyXPin);
+            JoyY = analogRead(JoyYPin);
             if (JoyX > 512 - deadZone && JoyX < 512 + deadZone) {
                 Serial.print("Running\n");
                 break;
             }
             Serial.println("Joystick not inside deadzone.");
-            Serial.print("X:"JoyX);
-            Serial.print(" , Y:");
+            Serial.print("X: ");
+            Serial.print(JoyX);
+            Serial.print(", Y: ");
             Serial.print(JoyY);
             Serial.println();
         }
@@ -70,7 +57,7 @@ void startup(StartPin){
     centreY = JoyY;
 }
 
-int getInput(int inputPin, int center, double timeChange, int JoyOutSmooth){
+int getInput(int inputPin, int centre, double timeChange, int JoyOutSmooth){
     int JoyIn = analogRead(inputPin);
     int JoyOut;
     if (JoyIn > centre + deadZone){ //Joystick pushed forward
@@ -104,3 +91,13 @@ double checkTime(){
     return timeChange;
 }
 
+void loop(){
+    if(!started){
+        startup(); // Loops inside itself
+        started = 1;
+        oldTime = millis();
+    }
+    double timeChange = checkTime();
+    input[0] = getInput(JoyXPin, centreX, timeChange, input[0]);
+    input[1] = getInput(JoyYPin, centreY, timeChange, input[1]);
+}

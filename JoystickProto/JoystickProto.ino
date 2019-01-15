@@ -184,7 +184,7 @@ void loop(){
     direction = 1;
   } else if (InB > 0 && speed < swapSpeed){
     direction = -1;
-  } else if (InF = 0 && InB = 0 && speed < swapSpeed){
+  } else if (InF == 0 && InB == 0 && speed < swapSpeed){
     direction = 0;
   }
   // Going places
