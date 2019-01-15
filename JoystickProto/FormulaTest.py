@@ -16,7 +16,7 @@ def main():
     yValues *= 100
     xvy = yValues/xValues
     turnWheelVal = yValues - (yValues*(((xValues)/100)))
-    #turnWheelVal = yValues - (xValues*(((yValues)/100)))
+    turnWheelVal = np.power(yValues, 2) + xValues
 
     lvr = yValues/turnWheelVal
     for i in range(numVals):
