@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def main():
-    angleList = np.arange(1, 90)
+    angleList = np.arange(1, 90, 10)
     numVals = angleList.size
     xValues = np.array(numVals)
     yValues = np.array(numVals)
@@ -12,11 +12,12 @@ def main():
     xvy = np.array(numVals)
     xValues = np.round(np.cos(np.radians(angleList)), 4)
     xValues *= 100
+    xValues.fill(50)
     yValues = np.round(np.sin(np.radians(angleList)), 4)
     yValues *= 100
     xvy = xValues/yValues
-    turnWheelVal1 = (yValues*((xValues)/100))
-    turnWheelVal2 = yValues * ((100 - xValues)/100) 
+    turnWheelVal1 = yValues - (yValues*((xValues)/100))
+    turnWheelVal2 = yValues - (np.power(xValues, 2)*0.01) 
 
     lvr1 = turnWheelVal1/yValues
     lvr2 = turnWheelVal2/yValues
