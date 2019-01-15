@@ -6,28 +6,34 @@ def main():
     numVals = angleList.size
     xValues = np.array(numVals)
     yValues = np.array(numVals)
-    turnWheelVal = np.array(numVals)
+    turnWheelVal1 = np.array(numVals)
+    turnWheelVal2 = np.array(numVals)
     lvr = np.array(numVals)
     xvy = np.array(numVals)
     xValues = np.round(np.cos(np.radians(angleList)), 4)
     xValues *= 100
-    xValues.fill(10)
     yValues = np.round(np.sin(np.radians(angleList)), 4)
     yValues *= 100
-    xvy = yValues/xValues
-    turnWheelVal = yValues - (yValues*(((xValues)/100)))
-    turnWheelVal = np.power(yValues, 2) + xValues
+    xvy = xValues/yValues
+    turnWheelVal1 = (yValues*((xValues)/100))
+    turnWheelVal2 = yValues * ((100 - xValues)/100) 
 
-    lvr = yValues/turnWheelVal
+    lvr1 = turnWheelVal1/yValues
+    lvr2 = turnWheelVal2/yValues
+   
     for i in range(numVals):
         print("- - - - - - - - - - - - - - - - \n")
-        print("X: " + str(xValues[i]) + "   Y: " + str(yValues[i]) + "\n")
-        print("LW: " + str(yValues[i]) + "   RW: " + str(turnWheelVal[i]) + "\n")
-        print("Left vs Right Ratio = " + str(lvr[i]))
-        print("X vs Y Ratio = " + str(xvy[i]))
-    plt.plot(lvr, yValues)
-    plt.ylabel('Y values')
-    plt.xlabel('Left vs Right')
+        print("X: " + str(round(xValues[i], 5)) + "   Y: " + str(round(yValues[i], 5)) + "\n")
+        print("Formula 1 = LW: " + str(round(yValues[i], 5)) + "   RW: " + str(round(turnWheelVal1[i], 5)) + "\n")
+        print("Formula 2 = LW: " + str(round(yValues[i], 5)) + "   RW: " + str(round(turnWheelVal2[i], 5)) + "\n")
+        print("Left vs Right Ratio 1 = " + str(round(lvr1[i], 5)))
+        print("Left vs Right Ratio 2 = " + str(round(lvr2[i], 5)))
+        print("X vs Y Ratio = " + str(round(xvy[i], 5)))
+    plt.plot(xvy, lvr1)
+    plt.plot(xvy, lvr2)
+    
+    plt.xlabel('X vs Y values')
+    plt.ylabel('Left vs Right')
 
     plt.show()
 
