@@ -84,25 +84,8 @@ int getInput(int inputPin, int centre){
         JoyOut = 0;
         // Serial.println(JoyOut);
     }
-
-    // if (abs(JoyOut - JoyOutSmooth) < (timeChange * responseSpeed)){ // If the amount to be added is more than
-    //     JoyOutSmooth = JoyOut; // the difference between the input and the current, make them equal, stops over shooting
-    // } else {
-    //     if(JoyOut > 0){
-    //         JoyOutSmooth += (timeChange * responseSpeed); // Delta time will adjust the response speed 
-    //     } else if(JoyOut < 0){
-    //         JoyOutSmooth -= (timeChange * responseSpeed); // so that exactly responseSpeed units will be added each second
-    //     }
-    // }  
     return JoyOut;
 }
-
-// long checkTime(){
-//     currentTime = micros();
-//     long timeChange = currentTime - oldTime; // Change into seconds
-//     oldTime = currentTime;
-//     return timeChange;
-// }
 
 int getOutputDirection(int input){
    if(input < 0){
@@ -129,66 +112,8 @@ void loop(){
     if(!started){
         startup(); // Loops inside itself
         started = 1;
-        // oldTime = micros();
     }
-    // long timeChange = checkTime();
     input[0] = getInput(JoyXPin, centreX);
     input[1] = getInput(JoyYPin, centreY);
-    directional = getOutputDirection(input[1]);
-    if(directional == 1){
-        digitalWrite(outDirPinL, 1);
-        digitalWrite(outDirPinR, 1);
-    }
-    else if(directional == -1){
-        digitalWrite(outDirPinL, 0);
-        digitalWrite(outDirPinR, 0);       
-    }
-    else {
-        if(turningDirection == 1){
-            digitalWrite(outDirPinL, 0);
-            digitalWrite(outDirPinR, 1);
-            analogWrite(outPWMPinL, abs(input[0])/2);
-            analogWrite(outPWMPinR, abs(input[0])/2);
-        } else if(turningDirection == -1){
-            digitalWrite(outDirPinL, 1);
-            digitalWrite(outDirPinR, 0);
-            analogWrite(outPWMPinL, abs(input[0])/2);
-            analogWrite(outPWMPinR, abs(input[0])/2);
-        }
-    }
-
-    int slowWheel = calculateTurningWheel(abs(input[0]), abs(input[1]));
-    int fastWheel = abs(input[1]);
-    turningDirection = getOutputDirection(input[0]);
-    if(turningDirection == 1){
-        //Serial.println("Going right");
-        analogWrite(outPWMPinL, fastWheel);
-        analogWrite(outPWMPinR, slowWheel);
-    }
-    else if(turningDirection == -1){
-        //Serial.println("Going left");
-        analogWrite(outPWMPinL, slowWheel);
-        analogWrite(outPWMPinR, fastWheel);
-    } 
-    else if(turningDirection == 0){
-        if(directional == 1){
-            //Serial.println("Going forward");
-        }
-        else if(directional == -1){
-            //Serial.println("Going back");
-        }
-        else if(directional == 0){
-            //Serial.println("Stationary");
-        }
-        Serial.println(fastWheel);
-        analogWrite(outPWMPinL, fastWheel);
-        analogWrite(outPWMPinR, fastWheel);
-    }
-    //Serial.println(slowWheel);
-    // Serial.print("X: ");
-    // Serial.print(input[0]);
-    // Serial.print("| Y:");
-    // Serial.print(input[1]);
-    // Serial.println();
     delay(10);
 }
