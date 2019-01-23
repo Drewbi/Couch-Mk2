@@ -17,17 +17,17 @@
 
 #define deadZone 50
 #define spinSpeedReduction 2 // Higher number = lower stationary rotation
-#define responseSpeed 10 // Speed of change of delayed input *change to step rate
+#define stepRate 10 // Speed of change of delayed input
 #define swapSpeed 1 // Speed at which couch can change direction.
 
-int directional = 0;
-int turningDirection = 0; //Left = -1, Right = 1
 int started;
 int centreX = 512;
 int centreY = 512;
-int input[2]; // X = [0], Y = [1]
-//unsigned long currentTime;
-//unsigned long oldTime;
+
+int inputX; //0 - 255 in either direction
+int directionX; //-1, 0 or 1 if the joystick is back, neutral or forward
+int inputY;
+int directionY;
 
 void setup(){
     Serial.begin(115200);
@@ -67,24 +67,42 @@ void startup(){
     centreY = JoyY;
 }
 
-int getInput(int inputPin, int centre){
+int getInput(int inputPinX, int centre){
     int JoyIn = analogRead(inputPin);
     int JoyOut;
     if (JoyIn > centre + deadZone){ //Joystick pushed forward
         // Calculate the distance from the edge of the dead zone and map to range 0 - 255
         JoyOut = map((JoyIn - (centre + deadZone)), 0, centre, 0, 255);
-        // Serial.println(JoyOut);
     } 
     else if (JoyIn < centre - deadZone){ //Joystick pushed back
         // Calculate the distance from the edge of the dead zone and make positive
         JoyOut = -1 * map((JoyIn - (centre - deadZone)) * -1, 0, centre, 0, 255);
-        // Serial.println(JoyOut);
     }
     else{
         JoyOut = 0;
-        // Serial.println(JoyOut);
     }
     return JoyOut;
+}
+
+void calculateInput(inputX, inputY, currentX, currentY){
+    double diffX = inputX - currentX;
+    double diffY = inputY - currentY;
+    double diffRatio;
+    if(diffX < diffY){
+        diffRatio = diffX/diffY;
+        inputX += round((stepRate/2) * diffRatio);
+        inputY += round((stepRate/2) * ((1 - diffRatio) + 1));
+    } 
+    else if(diffX > diffY){
+        diffRatio = diffY/diffX;
+        inputY += round((stepRate/2) * diffRatio);
+        inputX += round((stepRate/2) * ((1 - diffRatio) + 1));    
+    }
+    else {
+        diffRatio = 1.0; // diffX and diffY are equal
+        inputX += round(stepRate/2)
+        inputY += round(stepRate/2)
+    }
 }
 
 int getOutputDirection(int input){
