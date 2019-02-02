@@ -26,11 +26,11 @@ int centreX = 512;
 int centreY = 512;
 unsigned long oldTime;
 
-int inputX; //0 - 255 in either direction
+double inputX; //0 - 255 in either direction
 int directionX; //-1, 0 or 1 if the joystick is back, neutral or forward
-int inputY;
-double smoothedY;
+double inputY;
 int directionY;
+double smoothedY;
 
 void setup(){
     Serial.begin(115200);
@@ -69,29 +69,33 @@ void startup(){
     oldTime = micros();
 }
 
-int getInput(int inputPin, int centre){
+double getInput(int inputPin, int centre){
     int JoyIn = analogRead(inputPin);
-    int JoyOut = 0;
+    double JoyOut = 0;
     if (JoyIn > centre + deadZone){ //Joystick pushed forward
         // Calculate the distance from the edge of the dead zone and map to range 0 - 255
-        JoyOut = map((JoyIn - (centre + deadZone)), 0, centre, 0, 255);
+        JoyOut = (double)map((JoyIn - (centre + deadZone)), 0, centre, 0, 255);
     } 
     else if (JoyIn < centre - deadZone){ //Joystick pushed back
         // Calculate the distance from the edge of the dead zone and make positive
-        JoyOut = -1 * map((JoyIn - (centre - deadZone)) * -1, 0, centre, 0, 255);
+        JoyOut = (double)map((JoyIn - (centre - deadZone)) * -1, 0, centre, 0, 255);
     }
     return JoyOut;
 }
 
-void accelerationThrottle(int inputY, double currentY, double timeDiff){
-    yStep = timeDiff * stepRate;
-    if (inputY + yStep < (timeChange * responseSpeed)){ // If the amount to be added is more than
-        JoyOutSmooth = JoyOut; // the difference between the input and the current, make them equal, stops over shooting
+void accelerationThrottle(double inputY, double currentY, double timeDiff){
+    yStep = timeDiff * stepRate; // This number will add up to stepRate each second, allowing exact additions to be made
+    (double)inputY = inputY; // !Check This!
+    if(inputY < currentY){
+        yStep *= -1 // If decelerating, input must go down so the step will be negative
+    }
+   if (inputY - (currentY + yStep) < 0 || (currentY + yStep) - inputY < 0){ // If the amount to be added is more than
+        currentY = inputY; // the difference between the input and the current, make them equal. stops over shooting
     } else {
-        if(JoyOut > 0){
-            JoyOutSmooth += (timeChange * responseSpeed); // Delta time will adjust the response speed 
-        } else if(JoyOut < 0){
-            JoyOutSmooth -= (timeChange * responseSpeed); // so that exactly responseSpeed units will be added each second
+        if(directionY == 1){
+            JoyOutSmooth += yStep;
+        } else if(directionY == -1){
+            JoyOutSmooth -= yStep;
         }
     } 
 }
