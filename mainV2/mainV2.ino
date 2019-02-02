@@ -20,13 +20,16 @@
 #define stepRate 10 // Speed of change of delayed input
 #define swapSpeed 1 // Speed at which couch can change direction.
 
+// Global Variables
 int started;
 int centreX = 512;
 int centreY = 512;
+unsigned long oldTime;
 
 int inputX; //0 - 255 in either direction
 int directionX; //-1, 0 or 1 if the joystick is back, neutral or forward
 int inputY;
+double smoothedY;
 int directionY;
 
 void setup(){
@@ -45,12 +48,10 @@ void setup(){
 }
 
 void startup(){
-    int JoyX;
-    int JoyY;
     while(true){
         if (digitalRead(StartPin)){
-            JoyX = analogRead(JoyXPin);
-            JoyY = analogRead(JoyYPin);
+            int JoyX = analogRead(JoyXPin);
+            int JoyY = analogRead(JoyYPin);
             if (JoyX > 512 - deadZone && JoyX < 512 + deadZone) {
                 Serial.print("Running\n");
                 break;
@@ -65,11 +66,12 @@ void startup(){
     }
     centreX = JoyX;
     centreY = JoyY;
+    oldTime = micros();
 }
 
-int getInput(int inputPinX, int centre){
+int getInput(int inputPin, int centre){
     int JoyIn = analogRead(inputPin);
-    int JoyOut;
+    int JoyOut = 0;
     if (JoyIn > centre + deadZone){ //Joystick pushed forward
         // Calculate the distance from the edge of the dead zone and map to range 0 - 255
         JoyOut = map((JoyIn - (centre + deadZone)), 0, centre, 0, 255);
@@ -78,31 +80,27 @@ int getInput(int inputPinX, int centre){
         // Calculate the distance from the edge of the dead zone and make positive
         JoyOut = -1 * map((JoyIn - (centre - deadZone)) * -1, 0, centre, 0, 255);
     }
-    else{
-        JoyOut = 0;
-    }
     return JoyOut;
 }
 
-void calculateInput(inputX, inputY, currentX, currentY){
-    double diffX = inputX - currentX;
-    double diffY = inputY - currentY;
-    double diffRatio;
-    if(diffX < diffY){
-        diffRatio = diffX/diffY;
-        inputX += round((stepRate/2) * diffRatio);
-        inputY += round((stepRate/2) * ((1 - diffRatio) + 1));
+void accelerationThrottle(int inputY, double currentY, double timeDiff){
+    yStep = timeDiff * stepRate;
+    if (inputY + yStep < (timeChange * responseSpeed)){ // If the amount to be added is more than
+        JoyOutSmooth = JoyOut; // the difference between the input and the current, make them equal, stops over shooting
+    } else {
+        if(JoyOut > 0){
+            JoyOutSmooth += (timeChange * responseSpeed); // Delta time will adjust the response speed 
+        } else if(JoyOut < 0){
+            JoyOutSmooth -= (timeChange * responseSpeed); // so that exactly responseSpeed units will be added each second
+        }
     } 
-    else if(diffX > diffY){
-        diffRatio = diffY/diffX;
-        inputY += round((stepRate/2) * diffRatio);
-        inputX += round((stepRate/2) * ((1 - diffRatio) + 1));    
-    }
-    else {
-        diffRatio = 1.0; // diffX and diffY are equal
-        inputX += round(stepRate/2)
-        inputY += round(stepRate/2)
-    }
+}
+
+double getTimeDiff(){
+    unsigned long currentTime = micros();
+    double timeDiff = (double)(currentTime - oldTime)/(double)1000000; // Change into seconds
+    oldTime = currentTime;
+    return timeDiff;
 }
 
 int getOutputDirection(int input){
