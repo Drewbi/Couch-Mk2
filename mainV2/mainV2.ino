@@ -26,11 +26,20 @@ int centreX = 512;
 int centreY = 512;
 unsigned long oldTime;
 
-double inputX; //0 - 255 in either direction
-int directionX; //-1, 0 or 1 if the joystick is back, neutral or forward
-double inputY;
-int directionY;
-double smoothedY;
+int rawInputX; //-255 to 255, left is negative
+int rawInputY; // Back is negative
+
+double smoothY = 0;
+
+double speedL; // Speed recieved from left wheel
+double speedR; // Speed recieved from right wheel
+
+int currentDirection; // -1 reverse, 0 neutral, 1 forward
+
+int PWMLeft;
+int DIRLeft;
+int PWMRight;
+int DIRRight;
 
 void setup(){
     Serial.begin(115200);
@@ -54,14 +63,8 @@ void startup(){
             int JoyY = analogRead(JoyYPin);
             if (JoyX > 512 - deadZone && JoyX < 512 + deadZone) {
                 Serial.print("Running\n");
-                break;
+                break; // Exits the loop
             }
-            Serial.println("Joystick not inside deadzone.");
-            Serial.print("X: ");
-            Serial.print(JoyX);
-            Serial.print(", Y: ");
-            Serial.print(JoyY);
-            Serial.println();
         }
     }
     centreX = JoyX;
@@ -69,35 +72,47 @@ void startup(){
     oldTime = micros();
 }
 
-double getInput(int inputPin, int centre){
-    int JoyIn = analogRead(inputPin);
-    double JoyOut = 0;
-    if (JoyIn > centre + deadZone){ //Joystick pushed forward
-        // Calculate the distance from the edge of the dead zone and map to range 0 - 255
-        JoyOut = (double)map((JoyIn - (centre + deadZone)), 0, centre, 0, 255);
+int getInput(int inputPin, int centre){
+    int joyIn = analogRead(inputPin);
+    int joyOut = 0;
+    if (joyIn > centre + deadZone){ //Joystick pushed forward (512 - 1024)
+        // Calculate the distance from the edge of the dead zone and map to range 0 to 255
+        joyOut = map(joyIn, centre + deadZone, 1024, 0, 255);
     } 
-    else if (JoyIn < centre - deadZone){ //Joystick pushed back
-        // Calculate the distance from the edge of the dead zone and make positive
-        JoyOut = (double)map((JoyIn - (centre - deadZone)) * -1, 0, centre, 0, 255);
+    else if (joyIn < centre - deadZone){ //Joystick pulled back (0 - 512)
+        // Calculate the distance from the edge of the dead zone (0 to -255)
+        joyOut = map(joyIn, 0, centre - deadZone, -255, 0);
     }
-    return JoyOut;
+    return joyOut;
 }
 
-void accelerationThrottle(double inputY, double currentY, double timeDiff){
-    yStep = timeDiff * stepRate; // This number will add up to stepRate each second, allowing exact additions to be made
-    (double)inputY = inputY; // !Check This!
-    if(inputY < currentY){
-        yStep *= -1 // If decelerating, input must go down so the step will be negative
-    }
-   if (inputY - (currentY + yStep) < 0 || (currentY + yStep) - inputY < 0){ // If the amount to be added is more than
-        currentY = inputY; // the difference between the input and the current, make them equal. stops over shooting
-    } else {
-        if(directionY == 1){
-            JoyOutSmooth += yStep;
-        } else if(directionY == -1){
-            JoyOutSmooth -= yStep;
-        }
+int getDirection(int joyIn, int centre){
+    int dirOut = 0;
+    if (joyIn > centre + deadZone){ //Joystick pushed forward
+        dirOut = 1;
     } 
+    else if (joyIn < centre - deadZone){ //Joystick pushed back
+        dirOut = -1;
+    }
+    return dirOut;
+}
+
+double accelerationThrottle(double currentY, double timeDiff){
+    double joyOutSmooth = currentY;
+    yStep = timeDiff * stepRate; // This number will add up to stepRate each second, allowing exact additions to be made
+    double inputY = rawInputY;
+    // To prevent overshooting of the desired input, this logic makes sure the step to be added does not
+    // make currentY larger than inputY. It also makes currentY increase or descrease towards inputY
+    if(inputY > currentY){
+        if (inputY - (currentY + yStep) >= 0){
+            joyOutSmooth += yStep;
+        }
+    } else if (inputY < currentY){
+        if ((currentY + yStep) - inputY >= 0){
+            joyOutSmooth -= yStep;
+        }
+    }
+    return joyOutSmooth;
 }
 
 double getTimeDiff(){
@@ -120,7 +135,7 @@ int getOutputDirection(int input){
 }
 
 int calculateTurningWheel(int X, int Y){
-    int wheelVal = Y - X;
+    int wheelVal = Y - abs(X);
     if(wheelVal < 0){
         wheelVal = 0;
     }
@@ -133,7 +148,20 @@ void loop(){
         startup(); // Loops inside itself
         started = 1;
     }
-    input[0] = getInput(JoyXPin, centreX);
-    input[1] = getInput(JoyYPin, centreY);
-    delay(10);
+    rawInputX = getInput(JoyXPin, centreX);
+    rawInputY = getInput(JoyYPin, centreY);
+
+    smoothY = accelerationThrottle(smoothY, getTimeDiff())
+
+    if (getDirection(rawInputX, centreX) < 0){
+        PWMLeft = calculateTurningWheel(abs(rawInputX), smoothY);
+        PWMRight = smoothY;
+    } else if (getDirection(rawInputX, centreX) > 0){
+        PWMRight = calculateTurningWheel(abs(rawInputX), smoothY);
+        PWMLeft = smoothY;
+    } else {
+        PWMLeft = smoothY;
+        PWMRight = smoothY;
+    }
+    
 }
