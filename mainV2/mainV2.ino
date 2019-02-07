@@ -59,10 +59,12 @@ void setup(){
  * has been pressed and the joyStick is within the deadzone
 */
 void startup(){
+    int JoyX;
+    int JoyY;
     while(true){
         if (digitalRead(StartPin)){
-            int JoyX = analogRead(JoyXPin);
-            int JoyY = analogRead(JoyYPin);
+            JoyX = analogRead(JoyXPin);
+            JoyY = analogRead(JoyYPin);
             if (JoyX > 512 - deadZone && JoyX < 512 + deadZone) {
                 Serial.print("Running\n");
                 break; // Exits the loop
@@ -100,7 +102,7 @@ int getInputDirection(int joyIn){
 
 double accelerationThrottle(double currentY, double timeDiff){
     double joyOutSmooth = currentY;
-    yStep = timeDiff * stepRate; // This number will add up to stepRate each second, allowing exact additions to be made
+    double yStep = timeDiff * stepRate; // This number will add up to stepRate each second, allowing exact additions to be made
     double inputY = rawInputY;
     // To prevent overshooting of the desired input, this logic makes sure the step to be added does not
     // make currentY larger than inputY. It also makes currentY increase or descrease towards inputY
@@ -145,7 +147,7 @@ int calculateTurningWheel(int X, int Y){
     return wheelVal;
 }
 
-int getSpeed(int speedL, int speedR)
+int getSpeed(int speedL, int speedR){
     if (speedL > speedR){
         return speedL;
     } 
@@ -197,4 +199,8 @@ void loop(){
             PWMRight = 0;
         }
     }
+    analogWrite(outPWMPinL, PWMLeft);
+    digitalWrite(outDirPinL, DIRLeft);
+    analogWrite(outPWMPinR, PWMRight);
+    digitalWrite(outDirPinR, DIRRight);
 }
