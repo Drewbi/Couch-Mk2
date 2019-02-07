@@ -2,8 +2,7 @@
  * Version 2.0
  * By Drew Alexander
  * 
- * This program maps joystick input to a middle centred Forward, Back, Left and Right values
- * and then to smoothed left and right wheel values.
+ *
  */
 
 #define JoyYPin 0
@@ -34,10 +33,10 @@ double smoothY = 0;
 double speedL; // Speed recieved from left wheel
 double speedR; // Speed recieved from right wheel
 
-int currentDirection; // -1 reverse, 0 neutral, 1 forward
+int currentDirection = 0; // -1 reverse, 0 neutral, 1 forward
 
-int PWMLeft;
-int DIRLeft;
+int PWMLeft; // 0 - 255
+int DIRLeft; // 0 reverse, 1 forward
 int PWMRight;
 int DIRRight;
 
@@ -56,6 +55,9 @@ void setup(){
     Serial.println("Initialized");    
 }
 
+/* Startup stops the flow of the program until the start button
+ * has been pressed and the joyStick is within the deadzone
+*/
 void startup(){
     while(true){
         if (digitalRead(StartPin)){
@@ -86,15 +88,14 @@ int getInput(int inputPin, int centre){
     return joyOut;
 }
 
-int getDirection(int joyIn, int centre){
-    int dirOut = 0;
-    if (joyIn > centre + deadZone){ //Joystick pushed forward
-        dirOut = 1;
+int getInputDirection(int joyIn){
+    if (joyIn > 0){ //Joystick pushed forward
+        return 1;
     } 
-    else if (joyIn < centre - deadZone){ //Joystick pushed back
-        dirOut = -1;
+    else if (joyIn < 0){ //Joystick pushed back
+        return -1;
     }
-    return dirOut;
+    return 0;
 }
 
 double accelerationThrottle(double currentY, double timeDiff){
@@ -107,7 +108,8 @@ double accelerationThrottle(double currentY, double timeDiff){
         if (inputY - (currentY + yStep) >= 0){
             joyOutSmooth += yStep;
         }
-    } else if (inputY < currentY){
+    }
+    else if (inputY < currentY){
         if ((currentY + yStep) - inputY >= 0){
             joyOutSmooth -= yStep;
         }
@@ -122,16 +124,17 @@ double getTimeDiff(){
     return timeDiff;
 }
 
-int getOutputDirection(int input){
-   if(input < 0){
-       return -1;//negative position
-   }
-  else if(input > 0 ){
-      return 1;// positive position
-  }
-  else{
-      return 0;// netural postition
-  }
+int getCurrentDirection(int inputY, int speed, int currentDirection){
+    if(speed < swapSpeed && inputY == 0){
+        return 0; //neutral
+    }
+    if(speed < swapSpeed && inputY < 0){
+        return -1;// negative
+    }
+    if(speed < swapSpeed && inputY > 0){
+        return 1;// negative
+    }
+    return currentDirection; // Don't change direction
 }
 
 int calculateTurningWheel(int X, int Y){
@@ -142,6 +145,12 @@ int calculateTurningWheel(int X, int Y){
     return wheelVal;
 }
 
+int getSpeed(int speedL, int speedR)
+    if (speedL > speedR){
+        return speedL;
+    } 
+    return speedR;
+}
 
 void loop(){
     if(!started){
@@ -151,17 +160,41 @@ void loop(){
     rawInputX = getInput(JoyXPin, centreX);
     rawInputY = getInput(JoyYPin, centreY);
 
-    smoothY = accelerationThrottle(smoothY, getTimeDiff())
+    smoothY = accelerationThrottle(smoothY, getTimeDiff());
 
-    if (getDirection(rawInputX, centreX) < 0){
-        PWMLeft = calculateTurningWheel(abs(rawInputX), smoothY);
-        PWMRight = smoothY;
-    } else if (getDirection(rawInputX, centreX) > 0){
-        PWMRight = calculateTurningWheel(abs(rawInputX), smoothY);
-        PWMLeft = smoothY;
-    } else {
-        PWMLeft = smoothY;
-        PWMRight = smoothY;
+    currentDirection = getCurrentDirection(smoothY, getSpeed(speedL, speedR), currentDirection);
+    if (currentDirection != 0){
+        if (getInputDirection(rawInputX) < 0){ // Turning left
+            PWMLeft = calculateTurningWheel(abs(rawInputX), smoothY);
+            PWMRight = smoothY;
+        } else if (getInputDirection(rawInputX) > 0){ // Turning right
+            PWMRight = calculateTurningWheel(abs(rawInputX), smoothY);
+            PWMLeft = smoothY;
+        } else { // Not turning
+            PWMLeft = smoothY;
+            PWMRight = smoothY;
+        }
+        if (currentDirection == 1){ // Sets motors to forwards direction
+            DIRLeft = 1;
+            DIRRight = 1;
+        } else { // Sets motors to reverse direction
+            DIRLeft = 0;
+            DIRRight = 0;
+        }
+    } else { // Neutral turning
+        if (getInputDirection(rawInputX) < 0){ // Turning left
+            PWMLeft = abs(rawInputX)/spinSpeedReduction;
+            DIRLeft = 0;
+            PWMRight = abs(rawInputX)/spinSpeedReduction;
+            DIRRight = 1;
+        } else if (getInputDirection(rawInputX) > 0){ // Turning right
+            PWMLeft = abs(rawInputX)/spinSpeedReduction;
+            DIRLeft = 1;
+            PWMRight = abs(rawInputX)/spinSpeedReduction;
+            DIRRight = 0;
+        } else {
+            PWMLeft = 0;
+            PWMRight = 0;
+        }
     }
-    
 }
