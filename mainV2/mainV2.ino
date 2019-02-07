@@ -16,7 +16,7 @@
 
 #define deadZone 50
 #define spinSpeedReduction 2 // Higher number = lower stationary rotation
-#define stepRate 10 // Speed of change of delayed input
+#define stepRate 100 // Speed of change of delayed input
 #define swapSpeed 1 // Speed at which couch can change direction.
 
 // Global Variables
